@@ -43,11 +43,13 @@ classdef (Abstract) AbstractHypersphericalDistribution < AbstractHypersphereSubs
                     if gridFaces > 0
                         h = [h, ...
                             surf(xSphereOuter, ySphereOuter, zSphereOuter, max(cSphere,[],[1,2])*ones(size(xSphereOuter)), 'FaceColor', 'none')];
+                            
                         hold on;
                     end
                     h = [h, surf(xSphereInner, ySphereInner, zSphereInner, cSphere,'EdgeColor', 'none')];
                     axis equal
                     colorbar
+                    colormap default
                     if ~holdStatus
                         hold off
                     end

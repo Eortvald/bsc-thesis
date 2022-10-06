@@ -12,7 +12,7 @@
 classdef BinghamDistribution < AbstractHypersphericalDistribution
     
     properties
-        Z (:,1) double {mustBeNonpositive}       % Concentrations as a vector
+        Z (:,1) double {mustBeNonpositive} % Concentrations as a vector
         M (:,:) double  % Rotation matrix
         F (1,1) double     % Normalization constant
         dF (1,:) double     % Partial derivates of F
@@ -580,7 +580,9 @@ classdef BinghamDistribution < AbstractHypersphericalDistribution
             if nargin<2
                 mode = 'default';
             end
-            
+            disp(mode);
+            mode = 'mhg';
+            disp(mode);
             if dim == 2
                 if strcmp(mode, 'default') || strcmp(mode, 'bessel')
                     % Gerhard Kurz, Igor Gilitschenski, Simon Julier, Uwe D. Hanebeck,
