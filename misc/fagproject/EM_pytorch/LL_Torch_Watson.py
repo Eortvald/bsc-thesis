@@ -7,7 +7,6 @@ import torch
 Softmax = torch.nn.Softmax(0)
 Softplus = torch.nn.Softplus()
 
-
 # Lsum completes the sum of 
 def lsum(x):
     return x.max() + torch.log(torch.exp(x-x.max()).sum())
@@ -16,7 +15,6 @@ def lsum(x):
 def lsumMatrix(X):
     Max = X.max(1).values
     return torch.log(torch.exp(X-Max).sum(1)) + Max
-
 
 
 # Numerically stable log kummer's function
@@ -72,6 +70,22 @@ def log_likelihood(X,pi,kappa,mu,p=90,K=7):
 
     return outer
 
+# Intialize parameters mu always the same.
+def Initialize(p,K):
+        mu = torch.zeros((p,K))
+        for j in range(K):
+                val = 1 if j % 2 == 0 else -1
+                mu[(j*int(p/K)),j] = val
+
+        # Intialize pi,mu and kappa
+        grad = True
+        pi = torch.tensor([1/K for _ in range(K)],requires_grad=grad)
+        kappa = torch.tensor([1. for _ in range(K)],requires_grad=grad)
+        mu.requires_grad = grad
+
+        return pi,kappa,mu
+
+
 # Loop for optimizing Paramertter 
 def Optimizationloop(X,Parameters,lose,Optimizer,n_iters : int,K =7):
         for epoch in range(n_iters):
@@ -89,41 +103,3 @@ def Optimizationloop(X,Parameters,lose,Optimizer,n_iters : int,K =7):
                 if epoch % 100 == 0:
                         print(f"epoch {epoch+1}; Log-Likelihood = {Error}")
         return Parameters
-
-# Optimztion loop that returns development in loss
-def OptimizationTraj(X,Parameters,lose,Optimizer,n_iters : int,K =7):
-        Trajectory = np.zeros(n_iters)
-        for epoch in range(n_iters):
-                Error = -lose(X,*Parameters,K=K)
-                Error.backward()
-
-                if torch.isnan(Error):
-                    print("Optimizationloop has Converged")
-                    break
-
-                # Using optimzer
-                Optimizer.step()
-                Optimizer.zero_grad()
-
-                if epoch % 1000 == 0 or epoch == n_iters:
-                        print(f"epoch {epoch+1}; Log-Likelihood = {Error}")
-
-                Trajectory[epoch] = Error
-        return Trajectory
-
-
-# Intialize parameters mu always the same.
-def Initialize(p,K):
-        mu = torch.zeros((p,K))
-        for j in range(K):
-                val = 1 if j % 2 == 0 else -1
-                mu[(j*int(p/K)),j] = val
-
-        # Intialize pi,mu and kappa
-        grad = True
-        pi = torch.tensor([1/K for _ in range(K)],requires_grad=grad)
-        kappa = torch.tensor([1. for _ in range(K)],requires_grad=grad) 
-        mu.requires_grad = grad
-
-        return pi,kappa,mu
-# %%
