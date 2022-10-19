@@ -58,7 +58,7 @@ def log_likelihood_eval(X,pi,kappa,mu,p=90,K=7):
 # log-Likelihood of entire data under parameters pi,kappa,mu with parameter contraint for optimzation
 def log_likelihood(X,pi,kappa,mu,p=90,K=7):
     # Constraining Parameters:
-    pi_con = Softmax(pi) !!!!!!!!!!!
+    pi_con = Softmax(pi) #!!!!!!!!!!! Log?
     #kappa_con = Softplus(kappa)
     kappa_con = torch.minimum(Softplus(kappa),torch.tensor([800]))# min(af kappa_con,800)
     mu_con = mu /torch.sqrt((mu * mu).sum(axis=0))

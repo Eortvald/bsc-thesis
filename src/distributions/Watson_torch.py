@@ -6,16 +6,14 @@ class LogWatsonMultivariate(nn.Module):
     """
     Logarithmic Multivariate Watson distribution class
     """
-    def __init__(self,p, para_init=None):
+    def __init__(self,p):
         super().__init__()
 
         self.p = p
         self.mu = nn.Parameter(torch.rand(self.p))
-        self.kappa = nn.Parameter(torch.rand(self.p,self.p))
+        self.kappa = nn.Parameter(torch.tensor([1.]))
+        self.SoftPlus = nn.Softplus()
 
-        if para_init is not None:
-            print('Custom Initilization of')
-            #for special initialization of patamters
 
     def log_kummer(self, a, c, kappa):
         # inspiration form Morten Bessel function
@@ -30,9 +28,14 @@ class LogWatsonMultivariate(nn.Module):
 
         return logC
 
-    def log_pdf(self,X):
-        # Why Transpose in the end? see LL_Torch_Watson
-        logpdf = self.log_norm_constant() + self.kappa * torch.matmul(self.mu,X)**2
+    def log_pdf(self,x):
+
+        # Contraints
+        kappa_positive = self.SoftPlus(self.kappa)
+        mu_unit = nn.functional.normalize(self.mu)
+
+        #log PDF
+        logpdf = self.log_norm_constant() + kappa_positive * torch.matmul(mu_unit,x)**2
         return logpdf
 
     def forward(self,X):
@@ -42,18 +45,21 @@ class LogWatsonMultivariate(nn.Module):
 
 
 class TorchMixtureModel(nn.Module):
-    def __init__(self, distribution:object, K:int):
+    def __init__(self, distribution_object, K:int, dist_dim=90):
         super().__init__()
-        self.K = K
-        self.cluster_dist = distribution
+        self.distribution, self.K, self.p = distribution_object, K, dist_dim
+
         self.pi = nn.Parameter(torch.ones(self.K)*1/self.K)
-        self.
-    def log_likelihood_mixture(self):
+        self.LogSoftMax = nn.LogSoftmax()
+        self.mix_components = nn.ModuleList([self.distribution(self.p) for _ in range(self.K)])
 
+    def log_likelihood_mixture(self, X):
 
-    def forward(self):
+        inner = self.LogSoftMax(self.pi) + torch.tensor([K_mixture(X) for K_mixture in self.mix_components])
 
+        logL = torch.logsumexp(inner, dim=0)
 
-class Watson(nn.modules):
+        return logL
 
-
+    def forward(self, X):
+        return self.log_likelihood_mixture(X)
