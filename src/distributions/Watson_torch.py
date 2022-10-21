@@ -18,6 +18,7 @@ class Watson(nn.Module):
     def log_kummer(self, a, c, kappa):
         # inspiration form Morten Bessel function
         # Gamma based? see Mardia A.18
+
         logKum = torch.log(torch.tensor(0.1))
         return logKum
 
@@ -43,7 +44,6 @@ class Watson(nn.Module):
 
 
 
-
 class TorchMixtureModel(nn.Module):
     def __init__(self, distribution_object, K:int, dist_dim=90):
         super().__init__()
@@ -62,3 +62,9 @@ class TorchMixtureModel(nn.Module):
 
     def forward(self, X):
         return self.log_likelihood_mixture(X)
+
+
+if __name__ == "__main__":
+    W = Watson(p=3)
+    for p in iter(W.parameters()):
+        print(p)

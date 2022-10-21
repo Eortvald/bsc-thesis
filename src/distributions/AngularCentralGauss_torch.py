@@ -16,8 +16,7 @@ class AngularCentralGaussian(nn.Module):
         assert self.p % 2 == 0, 'P must be an even positive integer'
         self.half_p = int(p/2)
         self.L_diag = nn.Parameter(torch.rand(self.p))
-
-        self.L = nn.Parameter(torch.eye(self.p,self.p)/self.p) # symmetric positive semi-definite
+        self.L_under_diag = nn.Parameter(torch.tril(torch.rand(self.p, self.p),-1))
         self.SoftPlus = nn.Softplus()
 
     def log_sphere_surface(self):
@@ -25,19 +24,23 @@ class AngularCentralGaussian(nn.Module):
 
         return log_surf_a
 
-    def serve_A(self):
-        L_diag_constraint = self.SoftPlus(self.L_diag)  # Positive semi-definite
+    def compose_A(self):
+        L_diag_cap = self.SoftPlus(self.L_diag)  #Enshure Positive semi-definite
 
-        L =   # Creat a Lower triangular matrix
+        L = torch.tril(self.L_under_diag,-1) + torch.eye(self.p) * L_diag_cap
+
+        A = L @ L.T
+
         return A
 
     # Propability Density function
     def log_pdf(self,X):
 
+        A = self.compose_A()
 
-        A = self.serve_A
         ##### To LOG
         ### surface Area division?
+        # torch.logdet(input)::: backward through logdet() will be unstable in when input doesn’t have distinct singular values.
         log_acg_pdf = torch.linalg.det(A)**-0.5 * (X.T @ torch.linalg.inv(A) @ X)
 
         return log_acg_pdf
