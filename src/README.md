@@ -13,3 +13,9 @@ The `project_main` directory have the following directory structure
         ├── results
     ├── utils
         ├── preproccesing
+
+
+
+* Logsoftmax, Logsoftplus
+* logkummer, addiction in kummer-> logkummer?, precission of logkummer?
+* log pdf ACG
