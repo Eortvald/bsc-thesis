@@ -14,12 +14,11 @@ class Watson(nn.Module):
         self.mu = nn.Parameter(torch.rand(self.p))
         self.kappa = nn.Parameter(torch.tensor([1.]))
         self.SoftPlus = nn.Softplus()  # Log?
-        self.const_a = torch.tensor(0.5)
+        self.const_a = torch.tensor(0.5)  # a = 1/2,  !constant
 
     def log_kummer(self, a, b, kappa):
 
-
-        n = torch.arange(10000)  # precicion order
+        n = torch.arange(1000)  # precicion order
 
         inner = torch.lgamma(a + n) + torch.lgamma(b) - torch.lgamma(a) - torch.lgamma(b + n) \
                 + n * torch.log(kappa) - torch.lgamma(n + torch.tensor(1))
@@ -29,18 +28,16 @@ class Watson(nn.Module):
 
     def log_norm_constant(self):
         logC = torch.lgamma(torch.tensor(self.p / 2)) - torch.log(torch.tensor(2 * np.pi ** (self.p / 2))) \
-               - self.log_kummer(self.const_a, torch.tensor(self.p / 2), self.kappa)  # addiction kummer?
+               - self.log_kummer(self.const_a, torch.tensor(self.p / 2), self.kappa)  # addiction kummer last part?
 
         return logC
 
     def log_pdf(self, X):
         # Constraints
-        kappa_positive = self.SoftPlus(self.kappa)
-
+        kappa_positive = self.SoftPlus(self.kappa)  # Log softplus?
         mu_unit = nn.functional.normalize(self.mu, dim=0)
-        print(f'Norm of mu:{mu_unit.norm()}')
+        #print(f'Norm of mu:{mu_unit.norm()}')
         #assert torch.abs(mu_unit.norm() - 1.) > 1.e-3, "mu is not properly normalized"
-
 
         # log PDF
         logpdf = self.log_norm_constant() + kappa_positive * (mu_unit @ X.T) ** 2

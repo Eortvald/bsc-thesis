@@ -23,8 +23,10 @@ class TorchMixtureModel(nn.Module):
 
         inner = inner_pi + inner_pdf
 
-        logLikeLihood = torch.logsumexp(inner, dim=0)  # correct dim?
-        print(logLikeLihood)
+        loglikelihood_x_i = torch.logsumexp(inner, dim=0) #Log likelihood over a sample of p-dimensional vectors
+        #print(loglikelihood_x_i)
+        logLikeLihood = torch.sum(loglikelihood_x_i)
+        #print(logLikeLihood)
         return logLikeLihood
 
     def forward(self, X):
