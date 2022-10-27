@@ -40,7 +40,10 @@ class Watson(nn.Module):
         #assert torch.abs(mu_unit.norm() - 1.) > 1.e-3, "mu is not properly normalized"
 
         # log PDF
-        logpdf = self.log_norm_constant() + kappa_positive * (mu_unit @ X.T) ** 2
+        if self.p == 1:
+            logpdf = self.log_norm_constant() + kappa_positive * (mu_unit * X) ** 2
+        else:
+            logpdf = self.log_norm_constant() + kappa_positive * (mu_unit @ X.T) ** 2
         return logpdf
 
     def forward(self, X):
