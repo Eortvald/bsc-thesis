@@ -21,6 +21,8 @@ class AngularCentralGaussian(nn.Module):
 
     def log_sphere_surface(self):
         log_surf_a = torch.lgamma(self.half_p) - torch.log(2 * np.pi ** self.half_p)
+
+        #log_w_p <- log(2) + 0.5 * p * log(pi) - lgamma(0.5 * p) ???
         return log_surf_a
 
     def compose_L(self):

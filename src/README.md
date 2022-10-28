@@ -22,3 +22,4 @@ The `project_main` directory have the following directory structure
 * surface area konstant? log?
 * Softplus conataint 0 wich is not  pos definite
 * all n! to Gamma?
+* log of an inverse matrix?

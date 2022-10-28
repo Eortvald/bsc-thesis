@@ -18,13 +18,14 @@ class Watson(nn.Module):
 
     def log_kummer(self, a, b, kappa):
 
+        #konvergens criterie
         n = torch.arange(1000)  # precicion order
 
         inner = torch.lgamma(a + n) + torch.lgamma(b) - torch.lgamma(a) - torch.lgamma(b + n) \
                 + n * torch.log(kappa) - torch.lgamma(n + torch.tensor(1))
 
         logkum = torch.logsumexp(inner, dim=0)
-        return logkum
+        return logkum, inner
 
     def log_norm_constant(self):
         logC = torch.lgamma(torch.tensor(self.p / 2)) - torch.log(torch.tensor(2 * np.pi ** (self.p / 2))) \
@@ -52,5 +53,10 @@ class Watson(nn.Module):
 
 if __name__ == "__main__":
     W = Watson(p=3)
-    for p in iter(W.parameters()):
-        print(p)
+
+    W.mu = nn.Parameter(torch.rand(3))
+
+
+    X = torch.rand(10,3)
+
+    _, inner = W.log_kummer(torch.tensor(0.5), torch.tensor(3/2), torch.tensor())
