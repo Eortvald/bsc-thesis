@@ -16,6 +16,11 @@ class Watson(nn.Module):
         self.SoftPlus = nn.Softplus(beta=20,threshold=1)  # Log?
         self.const_a = torch.tensor(0.5)  # a = 1/2,  !constant
 
+    def set_param(self, set_mu, set_kappa):
+        assert len(set_mu) == self.p, f'Diagonal tensor most be {self.p} long'
+        self.mu = nn.Parameter(set_mu)
+        self.kappa = nn.Parameter(set_kappa)
+
     def log_kummer(self, a, b, kappa):
 
         #konvergens criterie
