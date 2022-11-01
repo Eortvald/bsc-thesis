@@ -13,7 +13,7 @@ class Watson(nn.Module):
         self.p = p
         self.mu = nn.Parameter(torch.rand(self.p))
         self.kappa = nn.Parameter(torch.tensor([1.]))
-        self.SoftPlus = nn.Softplus()  # Log?
+        self.SoftPlus = nn.Softplus(beta=20,threshold=1)  # Log?
         self.const_a = torch.tensor(0.5)  # a = 1/2,  !constant
 
     def log_kummer(self, a, b, kappa):
@@ -25,11 +25,18 @@ class Watson(nn.Module):
                 + n * torch.log(kappa) - torch.lgamma(n + torch.tensor(1))
 
         logkum = torch.logsumexp(inner, dim=0)
-        return logkum, inner
+        return logkum
+
+    def log_sphere_surface(self):
+        logSA = torch.log(torch.tensor(2*np.pi**(self.p/2)))/torch.lgamma(torch.tensor(self.p/2))
+        return logSA
 
     def log_norm_constant(self):
-        logC = torch.lgamma(torch.tensor(self.p / 2)) - torch.log(torch.tensor(2 * np.pi ** (self.p / 2))) \
-               - self.log_kummer(self.const_a, torch.tensor(self.p / 2), self.kappa)  # addiction kummer last part?
+        # logC = torch.lgamma(torch.tensor(self.p / 2)) - torch.log(torch.tensor(2 * np.pi ** (self.p / 2))) \
+        #        - self.log_kummer(self.const_a, torch.tensor(self.p / 2), self.kappa)  # addiction kummer last part?
+
+        logC = 1/self.log_sphere_surface() - self.log_kummer(self.const_a, torch.tensor(self.p / 2), self.kappa)
+
 
         return logC
 
@@ -52,11 +59,33 @@ class Watson(nn.Module):
 
 
 if __name__ == "__main__":
-    W = Watson(p=3)
 
-    W.mu = nn.Parameter(torch.rand(3))
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
 
+    mpl.use('Qt5Agg')
 
-    X = torch.rand(10,3)
+    W = Watson(p=2)
+    # phi = linspace(0, 2 * pi, 320);
+    # x = [cos(phi);sin(phi)];
+    #
+    #_, inner = W.log_kummer(torch.tensor(0.5), torch.tensor(3/2), torch.tensor())
 
-    _, inner = W.log_kummer(torch.tensor(0.5), torch.tensor(3/2), torch.tensor())
+    phi = torch.arange(0, 2 * np.pi, 0.001)
+    phi_arr = np.array(phi)
+    x = torch.column_stack((torch.cos(phi), torch.sin(phi)))
+
+    points = torch.exp(W(x))
+    props = np.array(points.squeeze().detach())
+
+    # props = props/np.max(props)
+
+    ax = plt.axes(projection='3d')
+    ax.plot(np.cos(phi_arr), np.sin(phi_arr), 0, 'gray')
+    ax.scatter(np.cos(phi_arr), np.sin(phi_arr), props, c=props, cmap='viridis', linewidth=0.5)
+
+    ax.view_init(30, 135)
+    plt.show()
+    # plt.show()
+    # plt.scatter(phi,props, s=3)
+    # plt.show()

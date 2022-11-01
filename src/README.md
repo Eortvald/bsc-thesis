@@ -17,7 +17,7 @@ The `project_main` directory have the following directory structure
 
 
 * Logsoftmax, Logsoftplus
-* logkummer, addiction in kummer-> logkummer?, precission of logkummer?
+* logkummer, addiction in kummer-> logkummer?,
 * log pdf ACG
 * surface area konstant? log?
 * Softplus conataint 0 wich is not  pos definite

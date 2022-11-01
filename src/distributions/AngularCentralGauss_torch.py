@@ -17,7 +17,7 @@ class AngularCentralGaussian(nn.Module):
         self.half_p = torch.tensor(p/2)
         self.L_diag = nn.Parameter(torch.rand(self.p))
         self.L_under_diag = nn.Parameter(torch.tril(torch.rand(self.p, self.p),-1))
-        self.SoftPlus = nn.Softplus()
+        self.SoftPlus = nn.Softplus(beta=20,threshold=1)
 
     def log_sphere_surface(self):
         log_surf_a = torch.lgamma(self.half_p) - torch.log(2 * np.pi ** self.half_p)
@@ -28,9 +28,9 @@ class AngularCentralGaussian(nn.Module):
     def compose_L(self):
         """ Cholesky Component -> A """
 
-        L_diag_pos_definite = self.SoftPlus(self.L_diag)  #this is only semidefinite...Need definite
+        L_diag_pos_definite = torch.log(self.SoftPlus(self.L_diag))  #this is only semidefinite...Need definite
 
-        L = torch.tril(self.L_under_diag,-1) + torch.eye(self.p) * L_diag_pos_definite
+        L = torch.tril(self.L_under_diag,-1) + torch.diagflat(L_diag_pos_definite)
         L_inv = torch.linalg.inv(L)
 
         #print(f"Should be Identity:\n {L @ L_inv}")
@@ -48,7 +48,9 @@ class AngularCentralGaussian(nn.Module):
             log_acg_pdf = self.log_sphere_surface() - 0.5 * log_det_A - self.half_p * torch.log(X * A_inv * X)
         else:
             log_acg_pdf = self.log_sphere_surface() - 0.5 * log_det_A - self.half_p * torch.log(torch.diag(X @ A_inv @ X.T))
+
         return log_acg_pdf
+
 
     def forward(self,X):
         return self.log_pdf(X)
