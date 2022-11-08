@@ -48,7 +48,7 @@ class Watson(nn.Module):
     def log_pdf(self, X):
         # Constraints
         kappa_positive = self.SoftPlus(self.kappa)  # Log softplus?
-        mu_unit = nn.functional.normalize(self.mu, dim=0)
+        mu_unit = nn.functional.normalize(self.mu, dim=0)  ##### Sufficent for backprop?
         #print(f'Norm of mu:{mu_unit.norm()}')
         #assert torch.abs(mu_unit.norm() - 1.) > 1.e-3, "mu is not properly normalized"
 

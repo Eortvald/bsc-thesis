@@ -54,7 +54,7 @@ class AngularCentralGaussian(nn.Module):
         if self.p == 1:
             log_acg_pdf = self.log_sphere_surface() - 0.5 * log_det_A - self.half_p * torch.log(X * A_inv * X)
         else:
-            log_acg_pdf = self.log_sphere_surface() - 0.5 * log_det_A - self.half_p * torch.log(torch.diag(X @ A_inv @ X.T))
+            log_acg_pdf = self.log_sphere_surface() - 0.5 * log_det_A - self.half_p * torch.log(torch.diag(X @ A_inv @ X.T)) #change to log domain matmultiplicatipn
 
         return log_acg_pdf
 
