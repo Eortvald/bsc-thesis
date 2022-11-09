@@ -7,13 +7,14 @@ class Watson(nn.Module):
     """
     Logarithmic Multivariate Watson distribution class
     """
+
     def __init__(self, p):
         super().__init__()
 
         self.p = p
         self.mu = nn.Parameter(torch.rand(self.p))
         self.kappa = nn.Parameter(torch.tensor([1.]))
-        self.SoftPlus = nn.Softplus(beta=20,threshold=1)  # Log?
+        self.SoftPlus = nn.Softplus(beta=20, threshold=1)  # Log?
         self.const_a = torch.tensor(0.5)  # a = 1/2,  !constant
 
     def set_param(self, set_mu, set_kappa):
@@ -23,7 +24,7 @@ class Watson(nn.Module):
 
     def log_kummer(self, a, b, kappa):
 
-        #konvergens criterie
+        # konvergens criterie
         n = torch.arange(1000)  # precicion order
 
         inner = torch.lgamma(a + n) + torch.lgamma(b) - torch.lgamma(a) - torch.lgamma(b + n) \
@@ -33,15 +34,14 @@ class Watson(nn.Module):
         return logkum
 
     def log_sphere_surface(self):
-        logSA = torch.log(torch.tensor(2*np.pi**(self.p/2)))/torch.lgamma(torch.tensor(self.p/2))
+        logSA = torch.log(torch.tensor(2 * np.pi ** (self.p / 2))) / torch.lgamma(torch.tensor(self.p / 2))
         return logSA
 
     def log_norm_constant(self):
         # logC = torch.lgamma(torch.tensor(self.p / 2)) - torch.log(torch.tensor(2 * np.pi ** (self.p / 2))) \
         #        - self.log_kummer(self.const_a, torch.tensor(self.p / 2), self.kappa)  # addiction kummer last part?
 
-        logC = 1/self.log_sphere_surface() - self.log_kummer(self.const_a, torch.tensor(self.p / 2), self.kappa)
-
+        logC = 1 / self.log_sphere_surface() - self.log_kummer(self.const_a, torch.tensor(self.p / 2), self.kappa)
 
         return logC
 
@@ -49,8 +49,8 @@ class Watson(nn.Module):
         # Constraints
         kappa_positive = self.SoftPlus(self.kappa)  # Log softplus?
         mu_unit = nn.functional.normalize(self.mu, dim=0)  ##### Sufficent for backprop?
-        #print(f'Norm of mu:{mu_unit.norm()}')
-        #assert torch.abs(mu_unit.norm() - 1.) > 1.e-3, "mu is not properly normalized"
+        # print(f'Norm of mu:{mu_unit.norm()}')
+        # assert torch.abs(mu_unit.norm() - 1.) > 1.e-3, "mu is not properly normalized"
 
         # log PDF
         if self.p == 1:
@@ -64,7 +64,6 @@ class Watson(nn.Module):
 
 
 if __name__ == "__main__":
-
     import matplotlib as mpl
     import matplotlib.pyplot as plt
 
@@ -74,7 +73,7 @@ if __name__ == "__main__":
     # phi = linspace(0, 2 * pi, 320);
     # x = [cos(phi);sin(phi)];
     #
-    #_, inner = W.log_kummer(torch.tensor(0.5), torch.tensor(3/2), torch.tensor())
+    # _, inner = W.log_kummer(torch.tensor(0.5), torch.tensor(3/2), torch.tensor())
 
     phi = torch.arange(0, 2 * np.pi, 0.001)
     phi_arr = np.array(phi)

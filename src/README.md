@@ -15,7 +15,7 @@ The `project_main` directory have the following directory structure
         ├── preproccesing
 
 
-
+### In code to-do
 * Logsoftmax, Logsoftplus
 * logkummer, addiction in kummer-> logkummer?,
 * log pdf ACG
@@ -23,3 +23,14 @@ The `project_main` directory have the following directory structure
 * Softplus conataint 0 wich is not  pos definite
 * all n! to Gamma?
 * log of an inverse matrix?
+* High likelihood values
+* Change ACG matmul to log domain
+* CHange nn.functional to nn. for correct backprop and device
+
+### To-do
+1. Training-loop/loading, splits etc.
+2. Watson EM traning
+2. Evaluate optimal number of clusters/state for modelling
+3. Uniform syntethic 3D data fitting of Watson and ACG on the sphere w. visulization
+4. Ground truth task signal comparison/evaluation - General Linear model?
+5. Report Content plan
