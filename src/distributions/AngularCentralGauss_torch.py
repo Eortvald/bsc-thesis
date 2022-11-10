@@ -17,7 +17,7 @@ class AngularCentralGaussian(nn.Module):
         self.half_p = torch.tensor(p/2)
         self.L_diag = nn.Parameter(torch.rand(self.p))
         self.L_under_diag = nn.Parameter(torch.tril(torch.rand(self.p, self.p),-1))
-        self.SoftPlus = nn.Softplus(beta=20,threshold=1)
+        self.SoftPlus = nn.Softplus(beta=20, threshold=1)
 
     def set_param(self, set_diag, set_under_diag):
         assert len(set_diag) == self.p, f'Diagonal tensor most be {self.p} long'

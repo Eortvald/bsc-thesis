@@ -3,17 +3,6 @@ import torch.nn as nn
 import numpy as np
 
 
-class EmissionModel(nn.Module):
-    """
-    Emission model for Markov state observation probability
-
-    !Continues density emission
-    """
-
-    def __int__(self, distribution):
-        super().__init__()
-
-
 class HiddenMarkovModel(nn.Module):
     """
     Hidden Markov model w. Continues observation density
@@ -35,8 +24,6 @@ class HiddenMarkovModel(nn.Module):
     def emission_models_forward(self, X):
         return torch.stack([state_emission(X) for state_emission in self.emission_models])
 
-    def transition_prop_forward(self, transition):
-        pass
 
     def forward(self, X):
         """
@@ -66,26 +53,24 @@ class HiddenMarkovModel(nn.Module):
                                  + torch.logsumexp(log_alpha[:, t - 1, :, None] + log_A, dim=1)
 
         # Termination 3)
-        # print(log_alpha[:, :, :])
-        print(log_alpha.shape)
-        #print(log_alpha)
-
         # LogSum for states N for each time t.
         log_t_sums = torch.logsumexp(log_alpha, dim=2)
-        # print(log_t_sums)
-        # Retrive the alpha for the last time t in the seq.
 
+        # Retrive the alpha for the last time t in the seq, per subject
         log_props = torch.gather(log_t_sums, dim=1, index=torch.tensor([[seq_max-1]] * num_subjects)).squeeze()
         # faster on GPU than just indexing...according to stackoverflow
 
         return log_props.sum()  # return sum of log_prop for all subjects
 
+    @torch.no_grad()   # Disables backprop since this is a inferencng method
     def viterbi(self, X):
         """
             (Rabiner, 1989)
             :param X: (num_subject/batch_size, observation_sequence, sample_x(dim=obs_dim))
             :return: State sequence
         """
+
+        ###### Remeber to set no grad/ eval() mode!!!
 
         # init 1)
         log_A = self.logsoftmax_transition(self.transition_matrix)
@@ -105,6 +90,7 @@ class HiddenMarkovModel(nn.Module):
         #print(log_A)
         #print(10*'---')
         for t in range(1, seq_max):
+
             #print(f'\t \t \t -------------{t}---------------')
             max_value, max_state_indice = torch.max(log_delta[:, t - 1, :, None] + log_A, dim=2)
             #print(log_delta[:, t - 1, :, None] + log_A)
@@ -115,31 +101,41 @@ class HiddenMarkovModel(nn.Module):
             log_delta[:, t, :] = self.emission_models_forward(X[:, t, :]).T + max_value
             psi[:, t, :] = max_state_indice
 
-        print(psi)
-        # Termination 3)
-        print(log_delta)
-        T_max_value, T_max_state_indice = torch.max(log_delta, dim=2)
-        log_props_max = torch.gather(T_max_value, dim=1, index=torch.tensor([[seq_max - 1]] * num_subjects)).squeeze()
-        log_props_max_state_indices = torch.gather(T_max_state_indice, dim=1, index=torch.tensor([[seq_max - 1]] * num_subjects)).squeeze()
-
-
-        # Path backtracking 4)
-        # Batches split up here for easier paralleliztion
+        # Termination 3) & Path backtracking 4)
+        # max value and argmax at each time t, per subject.
+        subjects_path_probs = torch.max(log_delta, dim=2)[0][:, -1]
+        subjects_state_paths = []
+        #print(log_delta[:,-1])
+        # Batches split up here for easier parallelization
+        # https://en.wikipedia.org/wiki/Viterbi_algorithm#Pseudocode
         for subject in range(num_subjects):
+            _, subject_argmax_T = log_delta[subject, -1].max(dim=0)
+            subject_path = [subject_argmax_T.item()]
 
-            for t in range(seq_max-1, 0, -1): # Reverse range for backtracking
-                pass
+            for t in range(seq_max-1, 0, -1):
+                #print(t)
+                previous_state = psi[subject, t, subject_path[0]].item()
 
-        return psi
+                subject_path.insert(0, previous_state)
+
+            subjects_state_paths.append(subject_path)
+
+        # Log probs!!
+        subjects_state_paths_ = np.array(subjects_state_paths)
+        subjects_path_probs_ = np.array(subjects_path_probs.detach().cpu())
+        return subjects_state_paths_, subjects_path_probs_
 
 
 if __name__ == '__main__':
     from src.distributions.Watson_torch import Watson
 
-    dim = 3
+    torch.manual_seed(5)
+    dim = 90
 
-    HMM = HiddenMarkovModel(num_states=3, observation_dim=dim, emission_dist=Watson)
-    X = torch.rand(1, 5, dim)  # num_subject, seq_max, observation_dim
+    HMM = HiddenMarkovModel(num_states=30, observation_dim=dim, emission_dist=Watson)
+    X = torch.rand(8, 20, dim)  # num_subject, seq_max, observation_dim
 
-    seq = HMM.viterbi(X)
+    seq, probs = HMM.viterbi(X)
 
+    print(seq)
+    print(probs)
