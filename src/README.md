@@ -25,7 +25,8 @@ The `project_main` directory have the following directory structure
 * log of an inverse matrix?
 * High likelihood values
 * Change ACG matmul to log domain
-* CHange nn.functional to nn. for correct backprop and device
+* Change nn.functional to nn. for correct backprop and device
+* Viterbi & forward matmul/state prob weight
 
 ### To-do
 1. Training-loop/loading, splits etc.

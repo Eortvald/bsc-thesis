@@ -68,9 +68,10 @@ class HiddenMarkovModel(nn.Module):
             (Rabiner, 1989)
             :param X: (num_subject/batch_size, observation_sequence, sample_x(dim=obs_dim))
             :return: State sequence
+            Structure inspired by https://github.com/lorenlugosch/pytorch_HMM
         """
 
-        ###### Remeber to set no grad/ eval() mode!!!
+
 
         # init 1)
         log_A = self.logsoftmax_transition(self.transition_matrix)
@@ -90,12 +91,10 @@ class HiddenMarkovModel(nn.Module):
         #print(log_A)
         #print(10*'---')
         for t in range(1, seq_max):
-
             #print(f'\t \t \t -------------{t}---------------')
             max_value, max_state_indice = torch.max(log_delta[:, t - 1, :, None] + log_A, dim=2)
             #print(log_delta[:, t - 1, :, None] + log_A)
             #print(f'\t max value: \n {max_value}')
-
             #print(f'\t max indices: \n {max_state_indice}')
             #print(max_state_indice)
             log_delta[:, t, :] = self.emission_models_forward(X[:, t, :]).T + max_value
@@ -113,6 +112,7 @@ class HiddenMarkovModel(nn.Module):
             subject_path = [subject_argmax_T.item()]
 
             for t in range(seq_max-1, 0, -1):
+                print(subject_path)
                 #print(t)
                 previous_state = psi[subject, t, subject_path[0]].item()
 
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     dim = 90
 
     HMM = HiddenMarkovModel(num_states=30, observation_dim=dim, emission_dist=Watson)
-    X = torch.rand(8, 20, dim)  # num_subject, seq_max, observation_dim
+    X = torch.rand(2, 20, dim)  # num_subject, seq_max, observation_dim
 
     seq, probs = HMM.viterbi(X)
 
