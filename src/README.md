@@ -20,7 +20,7 @@ The `project_main` directory have the following directory structure
 * logkummer, addiction in kummer-> logkummer?,
 * log pdf ACG
 * surface area konstant? log?
-* Softplus conataint 0 wich is not  pos definite
+* Softplus conasaint 0 wich is not  pos definite
 * all n! to Gamma?
 * log of an inverse matrix?
 * High likelihood values

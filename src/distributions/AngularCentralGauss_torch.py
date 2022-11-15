@@ -10,7 +10,7 @@ class AngularCentralGaussian(nn.Module):
     "Tyler 1987 - Statistical analysis for the angular central Gaussian distribution on the sphere"
     """
     def __init__(self, p):
-        super().__init__()
+        super(AngularCentralGaussian,self).__init__()
 
         self.p = p
         #assert self.p % 2 == 0, 'P must be an even positive integer'
@@ -20,11 +20,11 @@ class AngularCentralGaussian(nn.Module):
         self.SoftPlus = nn.Softplus(beta=20, threshold=1)
 
     def set_param(self, set_diag, set_under_diag):
-        assert len(set_diag) == self.p, f'Diagonal tensor most be {self.p} long'
-        self.mu = nn.Parameter(set_diag)
-
-        assert len(set_under_diag[0]) == self.p, f'Dimension must be {self.p}x{self.p}'
-        self.kappa = nn.Parameter(torch.tril(set_under_diag,-1))
+        #assert len(set_diag) == self.p, f'Diagonal tensor most be {self.p} long'
+        #self.mu = nn.Parameter(set_diag)
+        pass
+        #assert len(set_under_diag[0]) == self.p, f'Dimension must be {self.p}x{self.p}'
+        #self.kappa = nn.Parameter(torch.tril(set_under_diag,-1))
 
     def log_sphere_surface(self):
         log_surf_a = torch.lgamma(self.half_p) - torch.log(2 * np.pi ** self.half_p)
