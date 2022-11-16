@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-
+from scipy.special import gamma, factorial
 
 class Watson(nn.Module):
     """
@@ -30,18 +30,24 @@ class Watson(nn.Module):
         inner = torch.lgamma(a + n) + torch.lgamma(b) - torch.lgamma(a) - torch.lgamma(b + n) \
                 + n * torch.log(kappa) - torch.lgamma(n + torch.tensor(1))
 
+        inner2 = torch.lgamma(a + n) + torch.lgamma(b) - torch.lgamma(a) - torch.lgamma(b + n) \
+                + n * torch.log(kappa) - torch.lgamma(n + torch.tensor(1))
+
+
         logkum = torch.logsumexp(inner, dim=0)
         return logkum
 
     def log_sphere_surface(self):
-        logSA = torch.log(torch.tensor(2 * np.pi ** (self.p / 2))) / torch.lgamma(torch.tensor(self.p / 2))
+        logSA = torch.log(torch.tensor(gamma(self.p/2)/(2*np.pi**(self.p/2))))
+        logSA2 = torch.lgamma(torch.tensor(self.p / 2)) / torch.log(torch.tensor(2 * np.pi ** (self.p / 2)))
+
         return logSA
 
     def log_norm_constant(self):
         # logC = torch.lgamma(torch.tensor(self.p / 2)) - torch.log(torch.tensor(2 * np.pi ** (self.p / 2))) \
         #        - self.log_kummer(self.const_a, torch.tensor(self.p / 2), self.kappa)  # addiction kummer last part?
 
-        logC = 1 / self.log_sphere_surface() - self.log_kummer(self.const_a, torch.tensor(self.p / 2), self.kappa)
+        logC = self.log_sphere_surface() - self.log_kummer(self.const_a, torch.tensor(self.p / 2), self.kappa)
 
         return logC
 
@@ -49,6 +55,7 @@ class Watson(nn.Module):
         # Constraints
         kappa_positive = self.SoftPlus(self.kappa)  # Log softplus?
         mu_unit = nn.functional.normalize(self.mu, dim=0)  ##### Sufficent for backprop?
+
         # print(f'Norm of mu:{mu_unit.norm()}')
         # assert torch.abs(mu_unit.norm() - 1.) > 1.e-3, "mu is not properly normalized"
 
@@ -56,6 +63,8 @@ class Watson(nn.Module):
         if self.p == 1:
             logpdf = self.log_norm_constant() + kappa_positive * (mu_unit * X) ** 2
         else:
+            #print(X)
+            #print(X.T)
             logpdf = self.log_norm_constant() + kappa_positive * (mu_unit @ X.T) ** 2
         return logpdf
 
@@ -77,19 +86,32 @@ if __name__ == "__main__":
 
     phi = torch.arange(0, 2 * np.pi, 0.001)
     phi_arr = np.array(phi)
-    x = torch.column_stack((torch.cos(phi), torch.sin(phi)))
+    #x = torch.column_stack((torch.cos(phi), torch.sin(phi)))
 
-    points = torch.exp(W(x))
-    props = np.array(points.squeeze().detach())
+    #points = torch.exp(W(x))
+    #props = np.array(points.squeeze().detach())
 
     # props = props/np.max(props)
-
-    ax = plt.axes(projection='3d')
-    ax.plot(np.cos(phi_arr), np.sin(phi_arr), 0, 'gray')
-    ax.scatter(np.cos(phi_arr), np.sin(phi_arr), props, c=props, cmap='viridis', linewidth=0.5)
-
-    ax.view_init(30, 135)
-    plt.show()
+    #
+    # ax = plt.axes(projection='3d')
+    # ax.plot(np.cos(phi_arr), np.sin(phi_arr), 0, 'gray')
+    # ax.scatter(np.cos(phi_arr), np.sin(phi_arr), props, c=props, cmap='viridis', linewidth=0.5)
+    #
+    # ax.view_init(30, 135)
     # plt.show()
-    # plt.scatter(phi,props, s=3)
-    # plt.show()
+
+    #print(W(torch.tensor([0.5, 0.6])))
+    #
+    # torch.trapz()
+    #
+    ## Integral test
+
+
+
+    import scipy.integrate as integrate
+
+    pdf = lambda phi: float(torch.exp(W(torch.tensor([np.cos(phi), np.sin(phi)],dtype=torch.float))))
+
+    #print(pdf(0.5,0.6))
+
+    print(integrate.quad(pdf, 0., 2*np.pi))
