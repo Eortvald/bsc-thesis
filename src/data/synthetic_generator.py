@@ -45,10 +45,6 @@ def synthetic3D(pi,
 
 if __name__ == '__main__':
 
-    from mayavi import mlab
-
-
-
     sig1 = torch.diag(torch.tensor([1, 1e-3, 1e-3]))
     sig2 = torch.eye(3) + 0.9 * (torch.ones(3) - torch.eye(3))
     sig3 = torch.diag(torch.tensor([1e-3, 1, 1])) \
@@ -63,12 +59,12 @@ if __name__ == '__main__':
     X, cluster_id = synthetic3D(pi=PI, Sigmas=SIGMAs, num_points=1000, as_array=True)
 
     print(X.shape)
-
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
-    id_2_color = {0: 'cyan', 1: 'green', 2: 'magenta'}
 
+    id_2_color = {0: 'cyan', 1: 'green', 2: 'magenta'}
     id_2_colorcode = {0:(1.,1.,1.), 1:(0.5,0.5,0.5), 2:(0.,0.,0.)}
+
     label_color = [id_2_color[id] for id in cluster_id]
 
 

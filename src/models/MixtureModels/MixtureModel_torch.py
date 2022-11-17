@@ -16,6 +16,7 @@ class TorchMixtureModel(nn.Module):
         self.LogSoftMax = nn.LogSoftmax(dim=0)
 
     def log_likelihood_mixture(self, X):
+
         inner_pi = self.LogSoftMax(self.pi)[:, None]
         inner_pdf = torch.stack([K_comp_pdf(X) for K_comp_pdf in self.mix_components])
 
@@ -37,4 +38,4 @@ if __name__ == "__main__":
 
     data = torch.rand(6, 3)
     print(data)
-    MW(data)
+    print(MW(data))

@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from src.utils.log_matrix_multiplication import log_matmul
+
 from scipy.special import gamma
 
 
@@ -24,17 +26,13 @@ class AngularCentralGaussian(nn.Module):
 
 
     def log_sphere_surface(self):
-        logSA = torch.log(torch.tensor(gamma(self.half_p) / (2 * np.pi ** self.half_p)))
-        print(logSA)
-        # logSA2 = torch.lgamma(torch.tensor(self.p / 2)) / torch.log(torch.tensor(2 * np.pi ** (self.p / 2)))
-        # print(logSA2)
-        logSA3 = torch.lgamma(self.half_p) - torch.log(2 * np.pi ** self.half_p)
-        print(logSA3)
-        print('-------------------------')
-        return logSA3
+
+        logSA = torch.lgamma(self.half_p) - torch.log(2 * np.pi ** self.half_p)
+
+        return logSA
 
 
-    def compose_L(self):
+    def compose_A(self):
 
         """ Cholesky Component -> A """
 
@@ -50,16 +48,28 @@ class AngularCentralGaussian(nn.Module):
 
         return log_det_A, A_inv
 
-    # Propability Density function
+    # Probability Density function
     def log_pdf(self, X):
-        log_det_A, A_inv = self.compose_L()
+        log_det_A, A_inv = self.compose_A()
 
         if self.p == 1:
             log_acg_pdf = self.log_sphere_surface() - 0.5 * log_det_A \
                           - self.half_p * torch.log(X * A_inv * X)
         else:
+            # Log inspired from
+            #https://stackoverflow.com/questions/36467022/
+
+            #X_log = torch.log(X)
+            #A_inv_log = torch.log(A_inv)
+            #first_log_matmul = log_matmul(X_log, A_inv_log)
+            #logMatmulResult = torch.diag(log_matmul(first_log_matmul,torch.transpose(X_log,1,0)))
+            #print('--Matmul results---')
+            #print(logMatmulResult)
+            print((X @ A_inv @ X.T).max())
+            #print(torch.log(torch.diag(X @ A_inv @ X.T)))
+
             log_acg_pdf = self.log_sphere_surface() - 0.5 * log_det_A \
-                          - self.half_p * torch.log(torch.diag(X @ A_inv @ X.T))  # change to log domain matmultiplicatipn
+                          - self.half_p * torch.log(torch.diag(X @ A_inv @ X.T))
 
         return log_acg_pdf
 
@@ -72,40 +82,26 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     mpl.use('Qt5Agg')
+    dim = 3
+    ACG = AngularCentralGaussian(p=dim)
 
-    ACG = AngularCentralGaussian(p=2)
-    # phi = linspace(0, 2 * pi, 320);
-    # x = [cos(phi);sin(phi)];
-    #
-    #print(ACG(torch.tensor([np.cos(0.), np.sin(0.)], dtype=torch.float)))
+    X = torch.randn(6,dim)
 
-    # ACG.L_under_diag = nn.Parameter(torch.ones(2,2))
-    # ACG.L_diag = nn.Parameter(torch.tensor([21.,2.5]))
+    ACG(X)
+    # # ACG.L_under_diag = nn.Parameter(torch.ones(2,2))
+    # # ACG.L_diag = nn.Parameter(torch.tensor([21.,2.5]))
     # phi = torch.arange(0, 2*np.pi, 0.001)
-    # phi_arr =  np.array(phi)
+    # phi_arr = np.array(phi)
     # x = torch.column_stack((torch.cos(phi),torch.sin(phi)))
     #
     # points = torch.exp(ACG(x))
     # props = np.array(points.squeeze().detach())
     #
-    #
-    # #props = props/np.max(props)
-    #
     # ax = plt.axes(projection='3d')
-    # ax.plot(np.cos(phi_arr), np.sin(phi_arr), 0, 'gray')
+    # ax.plot(np.cos(phi_arr), np.sin(phi_arr), 0, 'gray') # ground line reference
     # ax.scatter(np.cos(phi_arr), np.sin(phi_arr), props, c=props, cmap='viridis', linewidth=0.5)
     #
     # ax.view_init(30, 135)
     # plt.show()
-    # plt.show()
     # plt.scatter(phi,props, s=3)
     # plt.show()
-    dim = torch.tensor(3)
-
-    c1 = 2 * np.pi ** (dim/2)
-
-    logSA = torch.log(torch.tensor(gamma(dim/2) / c1))
-    logSA3 = torch.lgamma(dim/2) - torch.log(c1)
-
-    print(logSA)
-    print(logSA3)
