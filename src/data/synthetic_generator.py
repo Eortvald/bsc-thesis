@@ -18,6 +18,7 @@ def synthetic3D(pi,
 
     Lower_chol = torch.zeros(3, 3, 3)
     for idx, sig in enumerate(Sigmas):
+        sig = 100 * sig
         Lower_chol[idx, :, :] = torch.linalg.cholesky(sig)
 
     # mixture assign and sample
@@ -54,9 +55,9 @@ if __name__ == '__main__':
 
     SIGMAs = torch.stack([sig1, sig2, sig3], dim=0)
     #print(SIGMAs)
-    PI = [0.4, 0.35, 0.25]
+    PI = [0.6, 0.2, 0.2]
 
-    X, cluster_id = synthetic3D(pi=PI, Sigmas=SIGMAs, num_points=1000, as_array=True)
+    X, cluster_id = synthetic3D(pi=PI, Sigmas=SIGMAs, num_points=3000, as_array=True)
 
     print(X.shape)
     fig = plt.figure()

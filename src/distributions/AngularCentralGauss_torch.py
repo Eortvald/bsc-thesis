@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from src.utils.log_matrix_multiplication import log_matmul
 
 from scipy.special import gamma
 
@@ -14,15 +13,18 @@ class AngularCentralGaussian(nn.Module):
     """
 
     def __init__(self, p):
-        super(AngularCentralGaussian, self).__init__()
+        super().__init__()
 
         self.p = p
         # assert self.p % 2 == 0, 'P must be an even positive integer'
         self.half_p = torch.tensor(p / 2)
         self.L_diag = nn.Parameter(torch.rand(self.p))
-        self.L_under_diag = nn.Parameter(torch.tril(torch.rand(self.p, self.p), -1))
+        self.L_under_diag = nn.Parameter(torch.tril(torch.randn(self.p, self.p), -1))
         self.SoftPlus = nn.Softplus(beta=20, threshold=1)
 
+
+    def get_params(self):
+        return self.compose_A(read_A_param=True)
 
 
     def log_sphere_surface(self):
@@ -32,19 +34,23 @@ class AngularCentralGaussian(nn.Module):
         return logSA
 
 
-    def compose_A(self):
+    def compose_A(self, read_A_param=False):
 
         """ Cholesky Component -> A """
 
         L_diag_pos_definite = self.SoftPlus(self.L_diag)  # this is only semidefinite...Need definite
 
         L = torch.tril(self.L_under_diag, -1) + torch.diagflat(L_diag_pos_definite)
+
         L_inv = torch.linalg.inv(L)
 
         # print(f"Should be Identity:\n {L @ L_inv}")
 
         log_det_A = 2 * torch.sum(torch.log(L_diag_pos_definite))
         A_inv = L_inv @ L_inv.T
+
+        if read_A_param:
+            return L @ L.T
 
         return log_det_A, A_inv
 

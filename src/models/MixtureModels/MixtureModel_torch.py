@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from src.distributions.Watson_torch import Watson
-from src.distributions.AngularCentralGauss_torch import AngularCentralGaussian
 
 
 class TorchMixtureModel(nn.Module):
@@ -10,14 +8,20 @@ class TorchMixtureModel(nn.Module):
         super().__init__()
 
         self.distribution, self.K, self.p = distribution_object, K, dist_dim
-        self.pi = nn.Parameter(torch.ones(self.K) * 1 / self.K)
+        self.pi = nn.Parameter(torch.rand(self.K))
         self.mix_components = nn.ModuleList([self.distribution(self.p) for _ in range(self.K)])
-
         self.LogSoftMax = nn.LogSoftmax(dim=0)
+        self.softplus = nn.Softplus()
+
+    def get_mixture_param(self):
+        with torch.no_grad():
+            mixture_param_dict = {'pi': self.pi.data}
+            for comp_id, comp_param in enumerate(self.mix_components):
+                mixture_param_dict[f'mix_comp_{comp_id}'] = comp_param.get_params()
+        return mixture_param_dict
 
     def log_likelihood_mixture(self, X):
-
-        inner_pi = self.LogSoftMax(self.pi)[:, None]
+        inner_pi = self.LogSoftMax(self.softplus(self.pi))[:, None]
         inner_pdf = torch.stack([K_comp_pdf(X) for K_comp_pdf in self.mix_components])
 
         inner = inner_pi + inner_pdf
@@ -33,6 +37,9 @@ class TorchMixtureModel(nn.Module):
 
 
 if __name__ == "__main__":
+    from src.distributions.Watson_torch import Watson
+    from src.distributions.AngularCentralGauss_torch import AngularCentralGaussian
+
     torch.set_printoptions(precision=4)
     MW = TorchMixtureModel(Watson, K=2, dist_dim=3)
 
