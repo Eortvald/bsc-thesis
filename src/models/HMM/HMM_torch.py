@@ -9,24 +9,25 @@ class HiddenMarkovModel(nn.Module):
     """
 
     def __init__(self, num_states, observation_dim, emission_dist):
-        super(HiddenMarkovModel, self).__init__()
+        super().__init__()
 
         self.N = num_states
         self.transition_matrix = nn.Parameter(torch.rand(self.N, self.N) / self.N)
         self.emission_density = emission_dist
         self.obs_dim = observation_dim
-        self.state_priors = nn.Parameter(torch.rand(self.N) * 1 / self.N)
+        self.state_priors = nn.Parameter(torch.rand(self.N) / self.N)
         self.emission_models = nn.ModuleList([self.emission_density(self.obs_dim) for _ in range(self.N)])
-
+        self.softplus = nn.Softplus(beta=20, threshold=1)
         self.logsoftmax_transition = nn.LogSoftmax(dim=1)
         self.logsoftmax_prior = nn.LogSoftmax(dim=0)
 
+    @torch.no_grad()
     def get_model_param(self):
-        with torch.no_grad():
-            pi_softmax = nn.functional.softmax(self.pi.data.to(torch.float64), dim=0).to(torch.float32)
-            mixture_param_dict = {'pi': pi_softmax}
-            for comp_id, comp_param in enumerate(self.mix_components):
-                mixture_param_dict[f'mix_comp_{comp_id}'] = comp_param.get_params()
+        priors_softmax = nn.functional.softmax(self.state_priors.data.to(torch.float64), dim=0).to(torch.float32)
+        mixture_param_dict = {'priors': priors_softmax}
+        mixture_param_dict['Transition_matrix'] = nn.functional.softmax(self.transition_matrix.data.to(torch.float64), dim=1).to(torch.float32)
+        for comp_id, comp_param in enumerate(self.emission_models):
+            mixture_param_dict[f'emission_model_{comp_id}'] = comp_param.get_params()
         return mixture_param_dict
 
     def emission_models_forward(self, X):
@@ -42,8 +43,8 @@ class HiddenMarkovModel(nn.Module):
         """
         # see (Rabiner, 1989)
         # init  1)
-        log_A = self.logsoftmax_transition(self.transition_matrix)
-        log_pi = self.logsoftmax_prior(self.state_priors)
+        log_A = self.logsoftmax_transition(self.softplus(self.transition_matrix))
+        log_pi = self.logsoftmax_prior(self.softplus(self.state_priors))
         num_subjects = X.shape[0]
         seq_max = X.shape[1]
         log_alpha = torch.zeros(num_subjects, seq_max, self.N)
@@ -68,7 +69,7 @@ class HiddenMarkovModel(nn.Module):
         log_props = torch.gather(log_t_sums, dim=1, index=torch.tensor([[seq_max-1]] * num_subjects)).squeeze()
         # faster on GPU than just indexing...according to stackoverflow
 
-        return log_props.sum()  # return sum of log_prop for all subjects
+        return log_props.sum(dim=0)  # return sum of log_prop for all subjects
 
     @torch.no_grad()   # Disables backprop since this is a inferencng method
     def viterbi(self, X):
@@ -79,15 +80,13 @@ class HiddenMarkovModel(nn.Module):
             Structure inspired by https://github.com/lorenlugosch/pytorch_HMM
         """
 
-
-
         # init 1)
-        log_A = self.logsoftmax_transition(self.transition_matrix)
-        log_pi = self.logsoftmax_prior(self.state_priors) # log_pi: (n states priors)
+        log_A = self.logsoftmax_transition(self.softplus(self.transition_matrix))
+        log_pi = self.logsoftmax_prior(self.softplus(self.state_priors)) # log_pi: (n states priors)
         num_subjects = X.shape[0]
         seq_max = X.shape[1]
         log_delta = torch.zeros(num_subjects, seq_max, self.N)
-        psi = torch.zeros(num_subjects, seq_max, self.N, dtype=torch.int64) # intergers - state seqeunces
+        psi = torch.zeros(num_subjects, seq_max, self.N, dtype=torch.int32) # intergers - state seqeunces
 
         # time t=0
         # emission forward return: -> transpose -> (subject, [state1_prop(x)...stateN_prop(x)])
@@ -120,7 +119,7 @@ class HiddenMarkovModel(nn.Module):
             subject_path = [subject_argmax_T.item()]
 
             for t in range(seq_max-1, 0, -1):
-                print(subject_path)
+                #print(subject_path)
                 #print(t)
                 previous_state = psi[subject, t, subject_path[0]].item()
 

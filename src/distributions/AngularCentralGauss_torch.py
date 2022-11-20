@@ -21,7 +21,7 @@ class AngularCentralGaussian(nn.Module):
         self.L_diag = nn.Parameter(torch.rand(self.p))
         self.L_under_diag = nn.Parameter(torch.tril(torch.randn(self.p, self.p), -1))
         self.SoftPlus = nn.Softplus(beta=20, threshold=1)
-
+        assert self.p != 1, 'Not matmul not stable for this dimension'
 
     def get_params(self):
         return self.compose_A(read_A_param=True)
@@ -45,7 +45,7 @@ class AngularCentralGaussian(nn.Module):
         L_inv = torch.linalg.inv(L)
 
         # print(f"Should be Identity:\n {L @ L_inv}")
-
+        #print(L_diag_pos_definite)
         log_det_A = 2 * torch.sum(torch.log(L_diag_pos_definite))
         A_inv = L_inv @ L_inv.T
 
@@ -58,24 +58,15 @@ class AngularCentralGaussian(nn.Module):
     def log_pdf(self, X):
         log_det_A, A_inv = self.compose_A()
 
-        if self.p == 1:
-            log_acg_pdf = self.log_sphere_surface() - 0.5 * log_det_A \
-                          - self.half_p * torch.log(X * A_inv * X)
-        else:
-            # Log inspired from
-            #https://stackoverflow.com/questions/36467022/
+        #first_log_matmul = log_matmul(X_log, A_inv_log)
+        #logMatmulResult = torch.diag(log_matmul(first_log_matmul,torch.transpose(X_log,1,0)))
+        #print('--Matmul results---')
+        #print(logMatmulResult)
+        #print((X @ A_inv @ X.T).max())
+        #print(torch.log(torch.diag(X @ A_inv @ X.T)))
 
-            #X_log = torch.log(X)
-            #A_inv_log = torch.log(A_inv)
-            #first_log_matmul = log_matmul(X_log, A_inv_log)
-            #logMatmulResult = torch.diag(log_matmul(first_log_matmul,torch.transpose(X_log,1,0)))
-            #print('--Matmul results---')
-            #print(logMatmulResult)
-            #print((X @ A_inv @ X.T).max())
-            #print(torch.log(torch.diag(X @ A_inv @ X.T)))
-
-            log_acg_pdf = self.log_sphere_surface() - 0.5 * log_det_A \
-                          - self.half_p * torch.log(torch.diag(X @ A_inv @ X.T))
+        log_acg_pdf = self.log_sphere_surface() - 0.5 * log_det_A \
+                      - self.half_p * torch.log(torch.diag(X @ A_inv @ torch.permute(X,(1,0))))
 
         return log_acg_pdf
 

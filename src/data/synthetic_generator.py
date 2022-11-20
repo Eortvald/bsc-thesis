@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 
-
+@torch.no_grad()
 def syntheticMixture3D(pi, Sigmas, num_points: int = 1000, point_dim: int = 3, as_array: bool = False):
     num_clusters = Sigmas.shape[0]
     print(f'Simulate {num_points} point from {num_clusters} of clusters')
@@ -25,7 +25,7 @@ def syntheticMixture3D(pi, Sigmas, num_points: int = 1000, point_dim: int = 3, a
 
     return (np.array(X), np.array(cluster_allocation)) if as_array else (X, cluster_allocation)
 
-
+@torch.no_grad()
 def syntheticHMM(pi, Sigmas, transition_matrix, seq_len: int = 300, point_dim: int = 3, as_array: bool = False):
 
     num_states = Sigmas.shape[0]
@@ -39,7 +39,7 @@ def syntheticHMM(pi, Sigmas, transition_matrix, seq_len: int = 300, point_dim: i
 
     X_emission = torch.zeros(seq_len, point_dim)
     Z_state_seq = torch.zeros(seq_len)
-    T_matrix = transition_matrix
+    T_matrix = nn.functional.softmax(transition_matrix.to(torch.float64),dim=1)
     state_list = list(range(num_states))
 
     for t in range(seq_len):
@@ -50,6 +50,7 @@ def syntheticHMM(pi, Sigmas, transition_matrix, seq_len: int = 300, point_dim: i
             t_z_probs = T_matrix[int(Z_state_seq[t - 1])] # row from transition matrix
 
             # get state for time t by weighting the transition probs
+            #print(t_z_probs)
             t_state_id = int(np.random.choice(state_list, 1, p=t_z_probs))
 
         # Emission from state at time t.

@@ -45,9 +45,9 @@ def train_hmm(HMM, data, optimizer, num_epoch=100, print_progress=False):
 
     for epoch in tqdm(range(num_epoch)):
 
-        leida_vectors = data.to(device)
+        subject_leida_vectors = data.to(device)
 
-        NegativeLogLikelihood = -model(leida_vectors)  # OBS! Negative
+        NegativeLogLikelihood = -model(subject_leida_vectors)  # OBS! Negative
 
         optimizer.zero_grad()
         NegativeLogLikelihood.backward()
