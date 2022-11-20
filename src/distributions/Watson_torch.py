@@ -18,10 +18,11 @@ class Watson(nn.Module):
         self.SoftPlus = nn.Softplus(beta=20, threshold=1)
         self.const_a = torch.tensor(0.5)  # a = 1/2,  !constant
 
-    def set_param(self, set_mu, set_kappa):
-        assert len(set_mu) == self.p, f'Diagonal tensor most be {self.p} long'
-        self.mu = nn.Parameter(set_mu)
-        self.kappa = nn.Parameter(set_kappa)
+    def get_params(self):
+        mu_param = nn.functional.normalize(self.mu.data, dim=0)
+        kappa_param = self.kappa.data
+        return {'mu': mu_param,
+                'kappa': kappa_param}
 
     def log_kummer(self, a, b, kappa):
         n = torch.arange(1000)
@@ -61,6 +62,9 @@ class Watson(nn.Module):
 
     def forward(self, X):
         return self.log_pdf(X)
+
+    def __repr__(self):
+        return 'Watson'
 
 
 if __name__ == "__main__":

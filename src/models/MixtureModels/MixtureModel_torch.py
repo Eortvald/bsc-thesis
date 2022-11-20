@@ -15,7 +15,8 @@ class TorchMixtureModel(nn.Module):
 
     def get_mixture_param(self):
         with torch.no_grad():
-            mixture_param_dict = {'pi': self.pi.data}
+            pi_softmax = nn.functional.softmax(self.pi.data.to(torch.float64), dim=0).to(torch.float32)
+            mixture_param_dict = {'pi': pi_softmax}
             for comp_id, comp_param in enumerate(self.mix_components):
                 mixture_param_dict[f'mix_comp_{comp_id}'] = comp_param.get_params()
         return mixture_param_dict
@@ -28,6 +29,7 @@ class TorchMixtureModel(nn.Module):
 
         loglikelihood_x_i = torch.logsumexp(inner, dim=0)  # Log likelihood over a sample of p-dimensional vectors
         # print(loglikelihood_x_i)
+
         logLikelihood = torch.sum(loglikelihood_x_i)
         # print(logLikeLihood)
         return logLikelihood

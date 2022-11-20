@@ -40,7 +40,7 @@ def synthetic3D(pi,
 
     if not transition_matrix:
         pass
-        print('Generating Synthetic HMM sequence')
+        #print('Generating Synthetic HMM sequence')
     return X, cluster_allocation
 
 
