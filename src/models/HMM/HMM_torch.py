@@ -21,6 +21,14 @@ class HiddenMarkovModel(nn.Module):
         self.logsoftmax_transition = nn.LogSoftmax(dim=1)
         self.logsoftmax_prior = nn.LogSoftmax(dim=0)
 
+    def get_model_param(self):
+        with torch.no_grad():
+            pi_softmax = nn.functional.softmax(self.pi.data.to(torch.float64), dim=0).to(torch.float32)
+            mixture_param_dict = {'pi': pi_softmax}
+            for comp_id, comp_param in enumerate(self.mix_components):
+                mixture_param_dict[f'mix_comp_{comp_id}'] = comp_param.get_params()
+        return mixture_param_dict
+
     def emission_models_forward(self, X):
         return torch.stack([state_emission(X) for state_emission in self.emission_models])
 

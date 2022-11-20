@@ -13,7 +13,7 @@ class TorchMixtureModel(nn.Module):
         self.LogSoftMax = nn.LogSoftmax(dim=0)
         self.softplus = nn.Softplus()
 
-    def get_mixture_param(self):
+    def get_model_param(self):
         with torch.no_grad():
             pi_softmax = nn.functional.softmax(self.pi.data.to(torch.float64), dim=0).to(torch.float32)
             mixture_param_dict = {'pi': pi_softmax}
@@ -26,6 +26,7 @@ class TorchMixtureModel(nn.Module):
         inner_pdf = torch.stack([K_comp_pdf(X) for K_comp_pdf in self.mix_components])
 
         inner = inner_pi + inner_pdf
+        #print(torch.exp(inner))
 
         loglikelihood_x_i = torch.logsumexp(inner, dim=0)  # Log likelihood over a sample of p-dimensional vectors
         # print(loglikelihood_x_i)

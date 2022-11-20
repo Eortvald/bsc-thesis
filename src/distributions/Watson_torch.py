@@ -17,6 +17,7 @@ class Watson(nn.Module):
         self.kappa = nn.Parameter(torch.rand(1))
         self.SoftPlus = nn.Softplus(beta=20, threshold=1)
         self.const_a = torch.tensor(0.5)  # a = 1/2,  !constant
+        assert self.p != 1, 'Not proper implemted'
 
     def get_params(self):
         mu_param = nn.functional.normalize(self.mu.data, dim=0)
@@ -26,21 +27,21 @@ class Watson(nn.Module):
 
     def log_kummer(self, a, b, kappa):
         n = torch.arange(1000)
+
         inner = torch.lgamma(a + n) + torch.lgamma(b) - torch.lgamma(a) - torch.lgamma(b + n) \
-                + n * torch.log(kappa) - torch.lgamma(n + torch.tensor(1))
+                + n * torch.log(kappa) - torch.lgamma(n + torch.tensor(1.))
+
         logkum = torch.logsumexp(inner, dim=0)
 
         return logkum
 
     def log_sphere_surface(self):
-        logSA = torch.lgamma(torch.tensor(self.p/2)) - torch.log(2 * np.pi ** (torch.tensor(self.p/2)))
+        logSA = torch.lgamma(torch.tensor(self.p / 2)) - torch.log(2 * np.pi ** (torch.tensor(self.p / 2)))
+
         return logSA
 
-    def log_norm_constant(self):
-        # logC = torch.lgamma(torch.tensor(self.p / 2)) - torch.log(torch.tensor(2 * np.pi ** (self.p / 2))) \
-        #        - self.log_kummer(self.const_a, torch.tensor(self.p / 2), self.kappa)  # addiction kummer last part?
-        logC = self.log_sphere_surface() - self.log_kummer(self.const_a, torch.tensor(self.p / 2), self.kappa)
-
+    def log_norm_constant(self, kappa_pos):
+        logC = self.log_sphere_surface() - self.log_kummer(self.const_a, torch.tensor(self.p / 2), kappa_pos)
         return logC
 
     def log_pdf(self, X):
@@ -48,16 +49,7 @@ class Watson(nn.Module):
         kappa_positive = self.SoftPlus(self.kappa)  # Log softplus?
         mu_unit = nn.functional.normalize(self.mu, dim=0)  ##### Sufficent for backprop?
 
-        # print(f'Norm of mu:{mu_unit.norm()}')
-        # assert torch.abs(mu_unit.norm() - 1.) > 1.e-3, "mu is not properly normalized"
-
-        # log PDF
-        if self.p == 1:
-            logpdf = self.log_norm_constant() + kappa_positive * (mu_unit * X) ** 2
-        else:
-            # print(X)
-            # print(X.T)
-            logpdf = self.log_norm_constant() + kappa_positive * (mu_unit @ X.T) ** 2
+        logpdf = self.log_norm_constant(kappa_positive) + kappa_positive * (mu_unit @ X.T) ** 2
         return logpdf
 
     def forward(self, X):
@@ -94,4 +86,3 @@ if __name__ == "__main__":
 
     ax.view_init(30, 135)
     plt.show()
-
