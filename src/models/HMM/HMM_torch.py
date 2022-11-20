@@ -71,7 +71,7 @@ class HiddenMarkovModel(nn.Module):
 
         return log_props.sum(dim=0)  # return sum of log_prop for all subjects
 
-    @torch.no_grad()   # Disables backprop since this is a inferencng method
+    #torch.no_grad()   # Disables backprop since this is a inferencng method
     def viterbi(self, X):
         """
             (Rabiner, 1989)
@@ -94,16 +94,9 @@ class HiddenMarkovModel(nn.Module):
 
         # Recursion 2)
         # for time:  t = 1 -> seq_max
-        #print(log_delta[:,0])
-        #print(log_A)
-        #print(10*'---')
         for t in range(1, seq_max):
-            #print(f'\t \t \t -------------{t}---------------')
             max_value, max_state_indice = torch.max(log_delta[:, t - 1, :, None] + log_A, dim=2)
-            #print(log_delta[:, t - 1, :, None] + log_A)
-            #print(f'\t max value: \n {max_value}')
-            #print(f'\t max indices: \n {max_state_indice}')
-            #print(max_state_indice)
+
             log_delta[:, t, :] = self.emission_models_forward(X[:, t, :]).T + max_value
             psi[:, t, :] = max_state_indice
 
@@ -111,7 +104,7 @@ class HiddenMarkovModel(nn.Module):
         # max value and argmax at each time t, per subject.
         subjects_path_probs = torch.max(log_delta, dim=2)[0][:, -1]
         subjects_state_paths = []
-        #print(log_delta[:,-1])
+
         # Batches split up here for easier parallelization
         # https://en.wikipedia.org/wiki/Viterbi_algorithm#Pseudocode
         for subject in range(num_subjects):
@@ -131,6 +124,37 @@ class HiddenMarkovModel(nn.Module):
         subjects_state_paths_ = np.array(subjects_state_paths)
         subjects_path_probs_ = np.array(subjects_path_probs.detach().cpu())
         return subjects_state_paths_, subjects_path_probs_
+
+    def viterbi2(self, X):
+        X = X.squeeze()
+        log_A = self.logsoftmax_transition(self.softplus(self.transition_matrix))
+        log_pi = self.logsoftmax_prior(self.softplus(self.state_priors))  # log_pi: (n states priors)
+        seq_max = X.shape[1]
+
+        t1 = torch.zeros(self.N, seq_max)
+        t2 = torch.zeros(self.N, seq_max, dtype=torch.int32)
+
+        # time t=0
+        # emission forward return: -> transpose -> (subject, [state1_prop(x)...stateN_prop(x)])
+        t1[:, 0] = log_pi + self.emission_models_forward(X[0]).T
+        t2[:, 0] = 0
+
+        t1[:, 0] /= t1[:, 0].sum()
+        t2[:, 0] = 0
+
+        for i in range(1, T):
+            t1[:, i] = np.max(t1[:, i - 1] * tp * ep[:, s(i)], axis=1)
+            t2[:, i] = np.argmax(t1[:, i - 1] * tp * ep[:, s(i)], axis=1)
+            t1[:, i] /= t1[:, i].sum()
+
+        z = np.argmax(t1, axis=0)
+        x = states[z]
+
+        for i in reversed(range(1, T)):
+            z[i - 1] = t2[z[i], i]
+            x[i - 1] = states[z[i - 1]]
+
+        return x, z
 
 
 if __name__ == '__main__':
