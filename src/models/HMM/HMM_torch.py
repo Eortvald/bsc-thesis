@@ -43,8 +43,8 @@ class HiddenMarkovModel(nn.Module):
         """
         # see (Rabiner, 1989)
         # init  1)
-        log_A = self.logsoftmax_transition(self.softplus(self.transition_matrix))
-        log_pi = self.logsoftmax_prior(self.softplus(self.state_priors))
+        log_A = self.logsoftmax_transition(self.transition_matrix)
+        log_pi = self.logsoftmax_prior(self.state_priors)
         num_subjects = X.shape[0]
         seq_max = X.shape[1]
         log_alpha = torch.zeros(num_subjects, seq_max, self.N)
@@ -85,6 +85,7 @@ class HiddenMarkovModel(nn.Module):
         log_pi = self.logsoftmax_prior(self.softplus(self.state_priors)) # log_pi: (n states priors)
         num_subjects = X.shape[0]
         seq_max = X.shape[1]
+
         log_delta = torch.zeros(num_subjects, seq_max, self.N)
         psi = torch.zeros(num_subjects, seq_max, self.N, dtype=torch.int32) # intergers - state seqeunces
 
@@ -125,36 +126,70 @@ class HiddenMarkovModel(nn.Module):
         subjects_path_probs_ = np.array(subjects_path_probs.detach().cpu())
         return subjects_state_paths_, subjects_path_probs_
 
-    def viterbi2(self, X):
-        X = X.squeeze()
-        log_A = self.logsoftmax_transition(self.softplus(self.transition_matrix))
-        log_pi = self.logsoftmax_prior(self.softplus(self.state_priors))  # log_pi: (n states priors)
+    def viterbi_2(self, X):
+        """
+            (Rabiner, 1989)
+            :param X: (num_subject/batch_size, observation_sequence, sample_x(dim=obs_dim))
+            :return: State sequence
+            Structure inspired by https://github.com/lorenlugosch/pytorch_HMM
+        """
+
+        # init 1)
+        log_A = self.logsoftmax_transition(self.transition_matrix)
+        log_pi = self.logsoftmax_prior(self.state_priors)  # log_pi: (n states priors)
+        num_subjects = X.shape[0]
         seq_max = X.shape[1]
 
-        t1 = torch.zeros(self.N, seq_max)
-        t2 = torch.zeros(self.N, seq_max, dtype=torch.int32)
+        log_delta = torch.zeros(num_subjects, seq_max, self.N)
+        psi = torch.zeros(num_subjects, seq_max, self.N, dtype=torch.int32)  # intergers - state seqeunces
 
         # time t=0
         # emission forward return: -> transpose -> (subject, [state1_prop(x)...stateN_prop(x)])
-        t1[:, 0] = log_pi + self.emission_models_forward(X[0]).T
-        t2[:, 0] = 0
+        log_delta[:, 0, :] = log_pi + self.emission_models_forward(X[:, 0, :]).T
 
-        t1[:, 0] /= t1[:, 0].sum()
-        t2[:, 0] = 0
+        # Recursion 2)
+        # for time:  t = 1 -> seq_max
+        for t in range(1, seq_max):
+            max_value, max_state_indices = torch.max(log_delta[:, t - 1, :, None] + log_A, dim=2)
+            print(f'Delta:\n{log_delta[:, t - 1, :, None]}')
+            print(f'A:\n{log_A}')
+            print(f'Delta + A:\n {log_delta[:, t - 1, :, None] + log_A}')
+            print('max val and max index')
+            print(max_value, max_state_indices)
+            print(10*'---')
 
-        for i in range(1, T):
-            t1[:, i] = np.max(t1[:, i - 1] * tp * ep[:, s(i)], axis=1)
-            t2[:, i] = np.argmax(t1[:, i - 1] * tp * ep[:, s(i)], axis=1)
-            t1[:, i] /= t1[:, i].sum()
+            if t == 10:
+                break
+            log_delta[:, t, :] = self.emission_models_forward(X[:, t, :]).T + max_value
+            psi[:, t, :] = max_state_indices
+        print(psi)
 
-        z = np.argmax(t1, axis=0)
-        x = states[z]
+        # Termination 3) & Path backtracking 4)
+        # max value and argmax at each time t, per subject.
+        subjects_path_probs = torch.max(log_delta, dim=2)[0][:, -1]
+        subjects_state_paths = []
 
-        for i in reversed(range(1, T)):
-            z[i - 1] = t2[z[i], i]
-            x[i - 1] = states[z[i - 1]]
+        # Batches/Subject split up here for easier parallelization
+        for subject in range(num_subjects):
+            _, subject_argmax_T = log_delta[subject, -1].max(dim=0)
 
-        return x, z
+            subject_path = [subject_argmax_T.item()] #Last state, with max probs
+            psi_subject = psi[subject]
+
+            for t in range(seq_max - 2, 0, -1):
+
+                previous_state = psi_subject[t, subject_path[0]].item()
+
+                subject_path.insert(0, previous_state)
+
+            subjects_state_paths.append(subject_path)
+
+
+
+        # Log probs!!
+        subjects_state_paths_ = np.array(subjects_state_paths)
+        subjects_path_probs_ = np.array(subjects_path_probs.detach().cpu())
+        return subjects_state_paths_, subjects_path_probs_
 
 
 if __name__ == '__main__':

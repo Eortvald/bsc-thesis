@@ -12,7 +12,8 @@ def syntheticMixture3D(pi, Sigmas, num_points: int = 1000, point_dim: int = 3, a
     for idx, sig in enumerate(Sigmas):
         # sig = 100 * sig ACG is scale invariant
         Lower_chol[idx, :, :] = torch.linalg.cholesky(sig)
-
+    pi = np.array(pi)
+    pi = np.exp(pi)/np.sum(np.exp(pi),axis=0)
     # mixture assign and sample
     X = torch.zeros(num_points, point_dim)
     cluster_allocation = torch.zeros(num_points)
