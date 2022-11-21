@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from scipy.special import gamma, factorial
-
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 class Watson(nn.Module):
     """
@@ -26,12 +26,12 @@ class Watson(nn.Module):
                 'kappa': kappa_param}
 
     def log_kummer(self, a, b, kappa):
-        n = torch.arange(1000)
+        n = torch.arange(1000).to(device)
 
         inner = torch.lgamma(a + n) + torch.lgamma(b) - torch.lgamma(a) - torch.lgamma(b + n) \
-                + n * torch.log(kappa) - torch.lgamma(n + torch.tensor(1.))
+                + n * torch.log(kappa) - torch.lgamma(n + torch.tensor(1.).to(device))
 
-        logkum = torch.logsumexp(inner, dim=0)
+        logkum = torch.logsumexp(inner, dim=0).to(device)
 
         return logkum
 

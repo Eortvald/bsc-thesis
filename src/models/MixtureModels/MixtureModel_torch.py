@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 class TorchMixtureModel(nn.Module):
     def __init__(self, distribution_object, K: int, dist_dim=90):
