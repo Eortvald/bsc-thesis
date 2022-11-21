@@ -14,7 +14,6 @@ def train_mixture(MixtureModel, data, optimizer, num_epoch=100, print_progress=F
     model = MixtureModel.to(device).train()
 
     epoch_likelihood_collector = np.zeros(num_epoch)
-
     for epoch in tqdm(range(num_epoch)):
 
         leida_vectors = data.to(device)
@@ -33,6 +32,36 @@ def train_mixture(MixtureModel, data, optimizer, num_epoch=100, print_progress=F
             print(100 * '^')
 
     return epoch_likelihood_collector
+
+
+def train_mixture_subjects(MixtureModel, data, optimizer, num_epoch=100, print_progress=False):
+    model = MixtureModel.to(device).train()
+
+    epoch_likelihood_collector = np.zeros(num_epoch)
+
+    for epoch in tqdm(range(num_epoch)):
+        epoch_LogLikelihood = 0
+        for subject in data:
+            all_leida_vectors = subject.to(device)
+
+            subject_Likelihood = -model(all_leida_vectors)  # OBS! Negative
+
+            epoch_LogLikelihood += subject_Likelihood
+            optimizer.zero_grad()
+            subject_Likelihood.backward()
+            optimizer.step()
+
+        epoch_likelihood_collector[epoch] = epoch_LogLikelihood
+
+        if print_progress:
+            print(100 * 'v')
+            print(f'Epoch: {epoch + 1} \t | Negative LogLikelihood {epoch_LogLikelihood:.7f}')
+            print(100 * '^')
+
+
+    return epoch_likelihood_collector
+
+
 # Train Hidden Markov model
 
 
