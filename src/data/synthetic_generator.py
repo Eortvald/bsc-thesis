@@ -64,15 +64,18 @@ def syntheticHMM(pi, Sigmas, transition_matrix, seq_len: int = 300, point_dim: i
 
 
 if __name__ == '__main__':
-    sig1 = torch.diag(torch.tensor([1, 1e-3, 1e-3]))
-    sig2 = torch.eye(3) + 0.9 * (torch.ones(3) - torch.eye(3))
+    sig1 = torch.diag(torch.tensor([0.5, 0.5, 1e-3]))
+    sig2 = torch.tensor([[1.0, 0.0, 0.0],
+                         [0.0, 0.001, 0.0],
+                         [0.0, 0.0, 0.01]])
+    print(torch.linalg.eigh(sig2))
     sig3 = torch.diag(torch.tensor([1e-3, 1, 1])) \
            + 0.9 * torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0]])
     # print(torch.linalg.eigh(sig1))
     SIGMAs = torch.stack([sig1, sig2, sig3], dim=0)
-    # print(SIGMAs)
+    print(SIGMAs)
     PI = [0.6, 0.2, 0.2]
-    X, cluster_id = syntheticMixture3D(pi=PI, Sigmas=SIGMAs, num_points=3000, as_array=True)
+    X, cluster_id = syntheticMixture3D(pi=PI, Sigmas=SIGMAs, num_points=1000, as_array=True)
     print(X.shape)
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')

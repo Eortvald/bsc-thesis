@@ -47,6 +47,7 @@ class AngularCentralGaussian(nn.Module):
         # print(f"Should be Identity:\n {L @ L_inv}")
         #print(L_diag_pos_definite)
         log_det_A = 2 * torch.sum(torch.log(L_diag_pos_definite))
+        assert log_det_A != torch.nan, f'{log_det_A}'
         A_inv = L_inv @ L_inv.T
 
         if read_A_param:
@@ -63,7 +64,7 @@ class AngularCentralGaussian(nn.Module):
         #print('--Matmul results---')
         #print(logMatmulResult)
         #print((X @ A_inv @ X.T).max())
-        #print(torch.log(torch.diag(X @ A_inv @ X.T)))
+        print(torch.diag(X @ A_inv @ X.T))
 
         log_acg_pdf = self.log_sphere_surface() - 0.5 * log_det_A \
                       - self.half_p * torch.log(torch.diag(X @ A_inv @ X.T))
