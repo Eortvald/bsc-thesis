@@ -66,7 +66,8 @@ class AngularCentralGaussian(nn.Module):
         #print((X @ A_inv @ X.T).max())
         print(torch.diag(X @ A_inv @ X.T))
 
-        log_acg_pdf = self.log_sphere_surface() - 0.5 * log_det_A \
+        log_acg_pdf = self.log_sphere_surface() \
+                      - 0.5 * log_det_A \
                       - self.half_p * torch.log(torch.diag(X @ A_inv @ X.T))
 
         return log_acg_pdf
