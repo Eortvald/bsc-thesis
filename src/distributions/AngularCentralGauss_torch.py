@@ -20,55 +20,62 @@ class AngularCentralGaussian(nn.Module):
         self.half_p = torch.tensor(p / 2)
         self.L_diag = nn.Parameter(torch.rand(self.p))
         self.L_under_diag = nn.Parameter(torch.tril(torch.randn(self.p, self.p), -1))
-        self.SoftPlus = nn.Softplus(beta=20, threshold=1)
+        self.SoftPlus = nn.Softplus()
         assert self.p != 1, 'Not matmul not stable for this dimension'
 
     def get_params(self):
-        return self.compose_A(read_A_param=True)
-
+        return self.Alter_compose_A(read_A_param=True)
 
     def log_sphere_surface(self):
-
         logSA = torch.lgamma(self.half_p) - torch.log(2 * np.pi ** self.half_p)
-
         return logSA
 
+    def Alter_compose_A(self, read_A_param=False):
+
+        """ Cholesky Component -> A """
+        L_diag_pos_definite = self.SoftPlus(self.L_diag)  # this is only semidefinite...Need definite
+        L_inv = torch.tril(self.L_under_diag, -1) + torch.diag(L_diag_pos_definite)
+        log_det_A = -2 * torch.sum(torch.log(L_diag_pos_definite))  # - det(A)
+
+        if read_A_param:
+            return torch.linalg.inv((L_inv.T @ L_inv))
+
+        return log_det_A, L_inv
 
     def compose_A(self, read_A_param=False):
 
-        """ Cholesky Component -> A """
+        L_diag_pos_definite = self.SoftPlus(self.L_diag)  #this is only semidefinite...Need definite
 
-        L_diag_pos_definite = self.SoftPlus(self.L_diag)  # this is only semidefinite...Need definite
+        L = torch.tril(self.L_under_diag, -1) + torch.diag(L_diag_pos_definite)
+        A = L @ L.T
 
-        L = torch.tril(self.L_under_diag, -1) + torch.diagflat(L_diag_pos_definite)
-
-        L_inv = torch.linalg.inv(L)
-
-        # print(f"Should be Identity:\n {L @ L_inv}")
-        #print(L_diag_pos_definite)
         log_det_A = 2 * torch.sum(torch.log(L_diag_pos_definite))
-        assert log_det_A != torch.nan, f'{log_det_A}'
-        A_inv = L_inv @ L_inv.T
 
         if read_A_param:
-            return L @ L.T
+            return A
 
-        return log_det_A, A_inv
+        return log_det_A, A
 
     # Probability Density function
     def log_pdf(self, X):
-        log_det_A, A_inv = self.compose_A()
+        log_det_A, L_inv = self.Alter_compose_A()
 
-        #first_log_matmul = log_matmul(X_log, A_inv_log)
-        #logMatmulResult = torch.diag(log_matmul(first_log_matmul,torch.transpose(X_log,1,0)))
-        #print('--Matmul results---')
-        #print(logMatmulResult)
-        #print((X @ A_inv @ X.T).max())
-        print(torch.diag(X @ A_inv @ X.T))
+
+        #matmul1 = torch.diag(X @ L_inv @ X.T)
+
+        B = X @ L_inv
+        matmul2 = torch.sum(B * B, dim=1)
+
+        for i in matmul2:
+            if torch.isnan(i):
+                print(matmul2)
+                print(L_inv)
+                print(self.L_diag)
+                raise ValueError('NaN was produced!')
 
         log_acg_pdf = self.log_sphere_surface() \
                       - 0.5 * log_det_A \
-                      - self.half_p * torch.log(torch.diag(X @ A_inv @ X.T))
+                      - self.half_p * torch.log(matmul2)
 
         return log_acg_pdf
 
@@ -87,9 +94,10 @@ if __name__ == "__main__":
     dim = 3
     ACG = AngularCentralGaussian(p=dim)
 
-    X = torch.randn(6,dim)
+    X = torch.randn(6, dim)
 
-    ACG(X)
+    out = ACG(X)
+    print(out)
     # # ACG.L_under_diag = nn.Parameter(torch.ones(2,2))
     # # ACG.L_diag = nn.Parameter(torch.tensor([21.,2.5]))
     # phi = torch.arange(0, 2*np.pi, 0.001)
