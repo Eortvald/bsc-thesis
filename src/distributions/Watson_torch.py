@@ -46,10 +46,22 @@ class Watson(nn.Module):
 
     def log_pdf(self, X):
         # Constraints
-        kappa_positive = self.SoftPlus(self.kappa)  # Log softplus?
+        kappa_positive = torch.clamp(self.SoftPlus(self.kappa), min=1e-25)  # Log softplus?
+
         mu_unit = nn.functional.normalize(self.mu, dim=0)  ##### Sufficent for backprop?
 
+        if torch.isnan(torch.log(kappa_positive)):
+            print('Code reached here') # if kappa is zeros
+            kappa_positive += 1e-15
+
+
         logpdf = self.log_norm_constant(kappa_positive) + kappa_positive * (mu_unit @ X.T) ** 2
+
+        if torch.isnan(logpdf.sum()):
+            print(kappa_positive)
+            print(torch.log(kappa_positive))
+
+            raise ValueError('NNAAANANANA')
         return logpdf
 
     def forward(self, X):
