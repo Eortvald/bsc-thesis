@@ -15,8 +15,8 @@ class TorchMixtureModel(nn.Module):
 
     @torch.no_grad()
     def get_model_param(self):
-        pi_softmax = nn.functional.softmax(self.pi.data.to(torch.float64), dim=0).to(torch.float32)
-        mixture_param_dict = {'pi': pi_softmax}
+        un_norm_pi = self.pi.data
+        mixture_param_dict = {'un_norm_pi': un_norm_pi}
         for comp_id, comp_param in enumerate(self.mix_components):
             mixture_param_dict[f'mix_comp_{comp_id}'] = comp_param.get_params()
         return mixture_param_dict

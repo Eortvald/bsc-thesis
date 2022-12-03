@@ -65,7 +65,7 @@ class AngularCentralGaussian(nn.Module):
 
         B = X @ L_inv
         matmul2 = torch.sum(B * B, dim=1)
-
+        print(matmul2.shape)
         for i in matmul2:
             if torch.isnan(i):
                 print(matmul2)

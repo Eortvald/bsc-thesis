@@ -72,8 +72,8 @@ if __name__ == '__main__':
     # print(torch.linalg.eigh(sig1))
     SIGMAs = torch.stack([sig1, sig2, sig3], dim=0)
     #print(SIGMAs)
-    PI = [0.6, 0.2, 0.2]
-    X, cluster_id = syntheticMixture3D(pi=PI, Sigmas=SIGMAs, num_points=1000, as_array=True)
+    PI = [0.5, 0.2, 0.3]
+    X, cluster_id = syntheticMixture3D(pi=PI, Sigmas=SIGMAs, num_points=3000, as_array=True)
     print(X.shape)
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')

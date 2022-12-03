@@ -63,13 +63,13 @@ def train_mixture_subjects(MixtureModel, data, optimizer, num_epoch=100, print_p
 
 
 
-def train_hmm(HMM, data, optimizer, num_epoch=100, print_progress=False):
+def train_hmm(HMM, data, optimizer, num_epoch=100, keep_bar=True):
 
     model = HMM.to(device).train()
 
     epoch_likelihood_collector = np.zeros(num_epoch)
 
-    for epoch in tqdm(range(num_epoch)):
+    for epoch in tqdm(range(num_epoch), leave=keep_bar):
 
         subject_leida_vectors = data.to(device)
 
