@@ -14,7 +14,7 @@ class Watson(nn.Module):
 
         self.p = p
         self.mu = nn.Parameter(torch.rand(self.p))
-        self.kappa = nn.Parameter(torch.rand(1))
+        self.kappa = nn.Parameter(torch.randint(1,10,(1,),dtype=torch.float32))
         self.SoftPlus = nn.Softplus(beta=20, threshold=1)
         self.const_a = torch.tensor(0.5)  # a = 1/2,  !constant
         assert self.p != 1, 'Not proper implemted'

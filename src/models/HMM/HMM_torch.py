@@ -12,10 +12,10 @@ class HiddenMarkovModel(nn.Module):
         super().__init__()
 
         self.N = num_states
-        self.transition_matrix = nn.Parameter(torch.rand(self.N, self.N) / self.N)
+        self.transition_matrix = nn.Parameter(torch.rand(self.N, self.N))
         self.emission_density = emission_dist
         self.obs_dim = observation_dim
-        self.state_priors = nn.Parameter(torch.rand(self.N) / self.N)
+        self.state_priors = nn.Parameter(torch.rand(self.N))
         self.emission_models = nn.ModuleList([self.emission_density(self.obs_dim) for _ in range(self.N)])
         self.softplus = nn.Softplus()
         self.logsoftmax_transition = nn.LogSoftmax(dim=1)
@@ -79,7 +79,7 @@ class HiddenMarkovModel(nn.Module):
             :return: State sequence
             Structure inspired by https://github.com/lorenlugosch/pytorch_HMM
         """
-
+        raise NotImplementedError
         # init 1)
         log_A = self.logsoftmax_transition(self.transition_matrix)
         log_pi = self.logsoftmax_prior(self.state_priors) # log_pi: (n states priors)

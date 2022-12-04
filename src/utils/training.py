@@ -81,11 +81,6 @@ def train_hmm(HMM, data, optimizer, num_epoch=100, keep_bar=True):
 
         epoch_likelihood_collector[epoch] = NegativeLogLikelihood
 
-        if print_progress:
-            print(100 * 'v')
-            print(f'Epoch: {epoch + 1} \t | Negative LogLikelihood {NegativeLogLikelihood:.7f}')
-            print(100 * '^')
-
     return epoch_likelihood_collector
 
 
@@ -119,12 +114,7 @@ def train_hmm_subjects(HMM, data, optimizer, num_epoch=100, print_progress=False
         optimizer.step()
 
         epoch_likelihood_collector[epoch] = NegativeLogLikelihood
-
-        if print_progress:
-            print(100 * 'v')
-            print(f'Epoch: {epoch + 1} \t | Negative LogLikelihood {NegativeLogLikelihood:.7f}')
-            print(100 * '^')
-
+        raise NotImplementedError
     return epoch_likelihood_collector
 
 

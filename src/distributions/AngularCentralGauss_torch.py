@@ -65,13 +65,12 @@ class AngularCentralGaussian(nn.Module):
 
         B = X @ L_inv
         matmul2 = torch.sum(B * B, dim=1)
-        print(matmul2.shape)
-        for i in matmul2:
-            if torch.isnan(i):
-                print(matmul2)
-                print(L_inv)
-                print(self.L_diag)
-                raise ValueError('NaN was produced!')
+
+        if torch.isnan(matmul2.sum()):
+            print(matmul2)
+            print(L_inv)
+            print(self.L_diag)
+            raise ValueError('NaN was produced!')
 
         log_acg_pdf = self.log_sphere_surface() \
                       - 0.5 * log_det_A \
