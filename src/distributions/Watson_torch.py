@@ -13,7 +13,7 @@ class Watson(nn.Module):
         super().__init__()
 
         self.p = p
-        self.mu = nn.Parameter(torch.rand(self.p))
+        self.mu = nn.Parameter(nn.functional.normalize(torch.rand(self.p), dim=0))
         self.kappa = nn.Parameter(torch.randint(1,10,(1,),dtype=torch.float32))
         self.SoftPlus = nn.Softplus(beta=20, threshold=1)
         self.const_a = torch.tensor(0.5)  # a = 1/2,  !constant

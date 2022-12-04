@@ -31,12 +31,12 @@ def train_mixture(MixtureModel, data, optimizer, num_epoch=100, keep_bar=True):
     return epoch_likelihood_collector
 
 
-def train_mixture_subjects(MixtureModel, data, optimizer, num_epoch=100, print_progress=False):
+def train_mixture_batches(MixtureModel, data, optimizer, num_epoch=100, keep_bar=True):
     model = MixtureModel.to(device).train()
 
     epoch_likelihood_collector = np.zeros(num_epoch)
 
-    for epoch in tqdm(range(num_epoch)):
+    for epoch in tqdm(range(num_epoch), leave=keep_bar):
         epoch_LogLikelihood = 0
         for subject in data:
             all_leida_vectors = subject.to(device)
@@ -50,10 +50,6 @@ def train_mixture_subjects(MixtureModel, data, optimizer, num_epoch=100, print_p
 
         epoch_likelihood_collector[epoch] = epoch_LogLikelihood
 
-        if print_progress:
-            print(100 * 'v')
-            print(f'Epoch: {epoch + 1} \t | Negative LogLikelihood {epoch_LogLikelihood:.7f}')
-            print(100 * '^')
 
 
     return epoch_likelihood_collector
