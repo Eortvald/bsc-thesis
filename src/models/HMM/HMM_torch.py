@@ -43,6 +43,7 @@ class HiddenMarkovModel(nn.Module):
         """
         # see (Rabiner, 1989)
         # init  1)
+
         log_A = self.logsoftmax_transition(self.transition_matrix)
         log_pi = self.logsoftmax_prior(self.state_priors)
         num_subjects = X.shape[0]
