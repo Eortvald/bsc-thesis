@@ -8,7 +8,7 @@ class HiddenMarkovModel(nn.Module):
     Hidden Markov model w. Continues observation density
     """
 
-    def __init__(self, num_states, observation_dim, emission_dist):
+    def __init__(self, num_states, emission_dist, observation_dim: int = 90):
         super().__init__()
 
         self.N = num_states
