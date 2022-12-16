@@ -4,7 +4,7 @@ import torch.nn as nn
 
 from scipy.special import gamma
 
-
+#device = 'cpu'
 class AngularCentralGaussian(nn.Module):
     """
     Angular-Central-Gaussian spherical distribution:

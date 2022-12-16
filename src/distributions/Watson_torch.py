@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 from scipy.special import gamma, factorial
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
+#device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cpu'
 class Watson(nn.Module):
     """
     Logarithmic Multivariate Watson distribution class

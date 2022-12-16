@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+device = 'cpu'
 
 class HiddenMarkovModel(nn.Module):
     """
@@ -48,7 +49,7 @@ class HiddenMarkovModel(nn.Module):
         log_pi = self.logsoftmax_prior(self.state_priors)
         num_subjects = X.shape[0]
         seq_max = X.shape[1]
-        log_alpha = torch.zeros(num_subjects, seq_max, self.N)
+        log_alpha = torch.zeros(num_subjects, seq_max, self.N).to(device)
 
         # time t=0
         # log_pi: (n states priors)
@@ -64,10 +65,10 @@ class HiddenMarkovModel(nn.Module):
 
         # Termination 3)
         # LogSum for states N for each time t.
-        log_t_sums = torch.logsumexp(log_alpha, dim=2)
+        log_t_sums = torch.logsumexp(log_alpha, dim=2).to(device)
 
         # Retrive the alpha for the last time t in the seq, per subject
-        log_props = torch.gather(log_t_sums, dim=1, index=torch.tensor([[seq_max-1]] * num_subjects)).squeeze()
+        log_props = torch.gather(log_t_sums, dim=1, index=torch.tensor([[seq_max-1]] * num_subjects).to(device)).squeeze()
         # faster on GPU than just indexing...according to stackoverflow
 
         return log_props.sum(dim=0)  # return sum of log_prop for all subjects
