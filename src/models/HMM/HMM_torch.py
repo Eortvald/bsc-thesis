@@ -105,8 +105,7 @@ class HiddenMarkovModel(nn.Module):
         # Recursion 2)
         # for time:  t = 1 -> seq_max
         for t in range(1, seq_max):
-            log_delta_A_E = (log_delta[:, t - 1, :, None] + log_A) + self.emission_models_forward(X[:, t, :]).T[:, :,
-                                                                     None]
+            log_delta_A_E = (log_delta[:, t - 1, :, None] + log_A) + self.emission_models_forward(X[:, t, :]).T[:, :,None]
             max_value, max_state_indice = torch.max(log_delta_A_E, dim=2)
             print(max_value)
             log_delta[:, t, :] = max_value
