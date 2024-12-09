@@ -118,7 +118,7 @@ tenacity==8.1.0
 terminado==0.15.0
 threadpoolctl==3.1.0
 tinycss2==1.1.1
-tornado==6.2
+tornado==6.4.2
 tqdm==4.64.1
 traitlets==5.4.0
 traits==6.4.1
